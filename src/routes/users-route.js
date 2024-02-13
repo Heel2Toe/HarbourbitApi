@@ -1,6 +1,6 @@
 import { compare, genSalt, hash } from 'bcrypt';
 import express from 'express';
-import { generateAccessToken, generateRefreshToken } from '../jwt.js';
+import { authorizeAccess, generateAccessToken, generateRefreshToken } from '../jwt.js';
 import { db } from '../db/mydb.js';
 import { usersTable } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -100,6 +100,18 @@ router.post("/signup", async (req, res) => {
       console.log("Error at users-route [/logout] : \n", error);
     }
   });
+
+  router.delete('/deleteUser/:userId', authorizeAccess, async (req,res) => {
+    const {userId} = req.params;
+    if(!userId) return res.status(400).send('No userId recieved');
+    try {
+      await db.delete(usersTable).where(eq(userId, usersTable.userId));
+      return res.send('success');
+    } catch (error) {
+      console.log("Error at users-route [/deleteUser] : \n", error);
+      res.status(500).send('Internal server error');
+    }
+  })
 
 
   router.get('/refresh', async (req,res)=>{
