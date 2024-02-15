@@ -1,6 +1,6 @@
 import { compare, genSalt, hash } from 'bcrypt';
 import express from 'express';
-import { authorizeAccess, generateAccessToken, generateRefreshToken } from '../jwt.js';
+import { authorizeAccess, generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 import { db } from '../db/mydb.js';
 import { usersTable } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -40,11 +40,12 @@ router.post("/signup", async (req, res) => {
     } catch (error) {
       console.log("Error at users-route [/signup] : \n", error);
   
-      if (
-        error.message == 'duplicate key value violates unique constraint "users_username_unique"'
-      ) {
+      if ( error.message == 'duplicate key value violates unique constraint "users_username_unique"')
+      {
         return res.status(409).send("username already exists");
-      } else {
+      } 
+      else 
+      {
         return res.status(500).send("Internal server error");
       }
     }

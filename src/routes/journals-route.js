@@ -2,7 +2,9 @@ import express from 'express';
 import { db } from '../db/mydb.js';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { journalsTable } from '../db/schema.js';
-import { authorizeAccess } from '../jwt.js';
+import { authorizeAccess } from '../utils/jwt.js';
+import sentimentAnalysis from '../utils/sentiment-analysis.js';
+import statsForUser from '../utils/stats-for-user.js';
 
 export const router = express.Router();
 
@@ -11,15 +13,17 @@ router.get('/getStats/:userId', authorizeAccess, async (req,res) => {
   const date = new Date();
   if(!userId) return res.status(400).send('No userId recieved');
   try {
-    const result = await db.select({createdAt: journalsTable.createdAt}).from(journalsTable).where(eq(journalsTable.authorId, userId));
+    const result = await db.select({createdAt: journalsTable.createdAt, sentiment: journalsTable.sentiment}).from(journalsTable).where(eq(journalsTable.authorId, userId));
     let lifeTotal = result.length;
-    let monthTotal = 0
-    result.map((item)=>{
-      if(item.createdAt.getMonth() == date.getMonth() && item.createdAt.getFullYear() == date.getFullYear()){
-        monthTotal+=1;
-      }
-    });
-    return res.json({lifeTotal, monthTotal}); 
+    
+    const transformedData = statsForUser(result);
+
+    
+    return res.json({lifeTotal, 
+                     monthTotal: transformedData.monthTotal, 
+                     pieData: transformedData.pieData,
+                     streak: transformedData.streak
+                    }); 
   } catch (error) {
     console.log("Error at journals-route [/getStats]: \n", error);
     return res.status(500).send('Internal server error');
@@ -33,10 +37,12 @@ router.post("/insertJournal", authorizeAccess, async (req, res) => {
       return res.status(400).send("Missing values");
     }
     try {
+      const sentiment = await sentimentAnalysis(content);
       await db.insert(journalsTable).values({
         title: title,
         content: content,
         authorId: userId,
+        sentiment: sentiment
       });
       return res.send("success");
     } catch (error) {
