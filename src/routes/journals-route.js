@@ -14,11 +14,8 @@ router.get('/getStats/:userId', authorizeAccess, async (req,res) => {
   if(!userId) return res.status(400).send('No userId recieved');
   try {
     const result = await db.select({createdAt: journalsTable.createdAt, sentiment: journalsTable.sentiment}).from(journalsTable).where(eq(journalsTable.authorId, userId));
-    let lifeTotal = result.length;
-    
-    const transformedData = statsForUser(result);
-
-    
+    let lifeTotal = result.length; 
+    const transformedData = statsForUser(result);  
     return res.json({lifeTotal, 
                      monthTotal: transformedData.monthTotal, 
                      pieData: transformedData.pieData,

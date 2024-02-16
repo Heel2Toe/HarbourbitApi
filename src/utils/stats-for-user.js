@@ -39,13 +39,17 @@ const statsForUser = (data) => {
       default: break;
     }
 
-    if(prevDate != null && isConsecutive(prevDate, item.createdAt)){
-        accumulator.streak+=1;
-    }
-    else{
-        accumulator.streak = 0;
-    }
-
+    if (prevDate != null) {
+      const consecutiveResult = isConsecutive(prevDate, item.createdAt);
+      if (consecutiveResult === true) {
+          accumulator.streak += 1;
+      } else if (consecutiveResult === false) {
+          accumulator.streak = 0;
+      }
+  }
+  else{
+    accumulator.streak += 1;
+  }
     prevDate = item.createdAt;
 
     return accumulator;
